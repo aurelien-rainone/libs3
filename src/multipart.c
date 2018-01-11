@@ -36,7 +36,7 @@ typedef struct InitialMultipartData
     SimpleXml simpleXml;
     int len;
     S3MultipartInitialHandler *handler;
-    string_buffer(upload_id, 256);
+    string_buffer(upload_id, S3_MAX_UPLOAD_ID_SIZE);
     void *userdata;
 } InitialMultipartData;
 
@@ -197,8 +197,9 @@ void S3_upload_part(S3BucketContext *bucketContext, const char *key,
                     int timeoutMs,
                     void *callbackData)
 {
-    char queryParams[512];
-    snprintf(queryParams, 512, "partNumber=%d&uploadId=%s", seq, upload_id);
+    const int queryMaxLen = S3_MAX_UPLOAD_ID_SIZE + 32;
+    char queryParams[queryMaxLen];
+    snprintf(queryParams, queryMaxLen, "partNumber=%d&uploadId=%s", seq, upload_id);
 
     RequestParams params =
     {
@@ -328,8 +329,8 @@ void S3_complete_multipart_upload(S3BucketContext *bucketContext,
                                   int timeoutMs,
                                   void *callbackData)
 {
-    char queryParams[512];
-    snprintf(queryParams, 512, "uploadId=%s", upload_id);
+    char queryParams[9 + S3_MAX_UPLOAD_ID_SIZE];
+    snprintf(queryParams, 9 + S3_MAX_UPLOAD_ID_SIZE, "uploadId=%s", upload_id);
     CommitMultiPartData *data =
         (CommitMultiPartData *) malloc(sizeof(CommitMultiPartData));
     data->userdata = callbackData;
@@ -382,7 +383,7 @@ void S3_complete_multipart_upload(S3BucketContext *bucketContext,
 typedef struct ListMultipartUpload
 {
     string_buffer(key, 1024);
-    string_buffer(uploadId, 256);
+    string_buffer(uploadId, S3_MAX_UPLOAD_ID_SIZE);
     string_buffer(initiatorId, 256);
     string_buffer(initiatorDisplayName, 256);
     string_buffer(ownerId, 256);

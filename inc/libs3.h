@@ -234,6 +234,13 @@ extern "C" {
 #define S3_DEFAULT_REGION                  "us-east-1"
 
 
+/**
+ * This is the maximum number of characters (including terminating \0) that
+ * libs3 supports for the upload id of a multipart upload.
+ **/
+#define S3_MAX_UPLOAD_ID_SIZE               1024
+
+
 /** **************************************************************************
  * Enumerations
  ************************************************************************** **/
