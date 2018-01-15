@@ -1200,8 +1200,8 @@ static S3Status setup_curl(Request *request,
     // less than 1K per second for more than 15 seconds.
     // xxx todo - make these configurable
     // xxx todo - allow configurable max send and receive speed
-    curl_easy_setopt_safe(CURLOPT_LOW_SPEED_LIMIT, 1024);
-    curl_easy_setopt_safe(CURLOPT_LOW_SPEED_TIME, 15);
+    /*curl_easy_setopt_safe(CURLOPT_LOW_SPEED_LIMIT, 1024);*/
+    /*curl_easy_setopt_safe(CURLOPT_LOW_SPEED_TIME, 15);*/
 
 
     if (params->timeoutMs > 0) {
