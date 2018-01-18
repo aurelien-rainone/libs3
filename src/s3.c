@@ -2057,8 +2057,6 @@ static int putObjectDataCallback(int bufferSize, char *buffer,
     return ret;
 }
 
-#define MULTIPART_CHUNK_SIZE (15 << 20) // multipart is 15M
-
 typedef struct MultipartPartData {
     put_object_callback_data put_object_data;
     int seq;
@@ -2396,7 +2394,7 @@ static void put_object(int argc, char **argv, int optindex,
         useServerSideEncryption
     };
 
-    if (contentLength <= MULTIPART_CHUNK_SIZE) {
+    if (contentLength <= S3_MULTIPART_CHUNK_SIZE) {
         S3PutObjectHandler putObjectHandler =
         {
             { &responsePropertiesCallback, &responseCompleteCallback },
@@ -2432,8 +2430,8 @@ static void put_object(int argc, char **argv, int optindex,
 
         //div round up
         int seq;
-        int totalSeq = ((contentLength + MULTIPART_CHUNK_SIZE- 1) /
-                        MULTIPART_CHUNK_SIZE);
+        int totalSeq = ((contentLength + S3_MULTIPART_CHUNK_SIZE- 1) /
+                        S3_MULTIPART_CHUNK_SIZE);
 
         MultipartPartData partData;
         int partContentLength = 0;
@@ -2484,14 +2482,14 @@ static void put_object(int argc, char **argv, int optindex,
         }
 
 upload:
-        todoContentLength -= MULTIPART_CHUNK_SIZE * manager.next_etags_pos;
+        todoContentLength -= S3_MULTIPART_CHUNK_SIZE * manager.next_etags_pos;
         for (seq = manager.next_etags_pos + 1; seq <= totalSeq; seq++) {
             memset(&partData, 0, sizeof(MultipartPartData));
             partData.manager = &manager;
             partData.seq = seq;
             partData.put_object_data = data;
-            partContentLength = ((contentLength > MULTIPART_CHUNK_SIZE) ?
-                                 MULTIPART_CHUNK_SIZE : contentLength);
+            partContentLength = ((contentLength > S3_MULTIPART_CHUNK_SIZE) ?
+                                 S3_MULTIPART_CHUNK_SIZE : contentLength);
             printf("%s Part Seq %d, length=%d\n", srcSize ? "Copying" : "Sending", seq, partContentLength);
             partData.put_object_data.contentLength = partContentLength;
             partData.put_object_data.originalContentLength = partContentLength;
@@ -2515,7 +2513,7 @@ upload:
                     S3ResponseHandler copyResponseHandler = { &responsePropertiesCallback, &responseCompleteCallback };
                     int64_t lastModified;
 
-                    unsigned long long startOffset = (unsigned long long)MULTIPART_CHUNK_SIZE * (unsigned long long)(seq-1);
+                    unsigned long long startOffset = (unsigned long long)S3_MULTIPART_CHUNK_SIZE * (unsigned long long)(seq-1);
                     unsigned long long count = partContentLength - 1; // Inclusive for copies
                     // The default copy callback tries to set this for us, need to allocate here
                     manager.etags[seq-1] = malloc(512); // TBD - magic #!  Isa there a max etag defined?
@@ -2540,8 +2538,8 @@ upload:
                 printError();
                 goto clean;
             }
-            contentLength -= MULTIPART_CHUNK_SIZE;
-            todoContentLength -= MULTIPART_CHUNK_SIZE;
+            contentLength -= S3_MULTIPART_CHUNK_SIZE;
+            todoContentLength -= S3_MULTIPART_CHUNK_SIZE;
         }
 
         int i;
@@ -2668,8 +2666,8 @@ static void copy_object(int argc, char **argv, int optindex)
         fprintf(stderr, "%s\n", errorDetailsG);
         exit(1);
     }
-    if (sourceSize > MULTIPART_CHUNK_SIZE) {
-        printf("\nUsing multipart copy because object size %llu is above %d.\n", sourceSize, MULTIPART_CHUNK_SIZE);
+    if (sourceSize > S3_MULTIPART_CHUNK_SIZE) {
+        printf("\nUsing multipart copy because object size %llu is above %d.\n", sourceSize, S3_MULTIPART_CHUNK_SIZE);
         put_object(argc, argv, optindex, sourceBucketName, sourceKey, sourceSize);
         return;
     }
